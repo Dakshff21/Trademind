@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0b1220">
 <meta name="description" content="Mobile-first crypto market analysis and historical strategy testing.">
 <link rel="manifest" href="manifest.json">
-<title>TradeMind AI — Crypto Lab</title>
+<title>TradeMind AI — Advanced Crypto Lab</title>
 <style>
 :root{--bg:#080d18;--panel:#111a2b;--panel2:#162238;--line:#263650;--text:#edf3ff;--muted:#9eacc4;--green:#35d39a;--red:#ff6b7a;--blue:#80aaff;--amber:#f5c76b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#13213b 0%,var(--bg) 52%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -28,7 +28,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">TM</div><div>TradeMind <span style="color:#8caeff">AI</span><div class="sub">CRYPTO MARKET LAB · MOBILE EDITION</div></div></div></header>
+<header><div class="brand"><div class="logo">TM</div><div>TradeMind <span style="color:#8caeff">AI</span><div class="sub">ADVANCED CRYPTO RESEARCH · MOBILE EDITION</div></div></div></header>
 <main>
 <div class="warning"><b>Research tool, not financial advice.</b> Crypto is volatile. Backtests can overfit, fees/slippage matter, and past performance does not predict future results. No trade signal is a guarantee.</div>
 <section class="controls">
@@ -48,6 +48,27 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 <div class="metric"><div class="label">MACD</div><div class="value" id="macd">—</div><div class="hint" id="macdHint">Trend momentum</div></div>
 <div class="metric"><div class="label">EMA 20 / EMA 50</div><div class="value" id="ema">—</div><div class="hint" id="emaHint">Trend filter</div></div>
 </div></section>
+<section class="panel wide" id="decisionPanel"><div class="signal"><h2>Trade decision & reasons</h2><span id="decisionPill" class="pill">WAITING</span></div><div class="grid"><div class="metric"><div class="label">Current action</div><div class="value" id="decision">—</div><div class="hint" id="decisionSummary">Analyze market to calculate.</div></div><div class="metric"><div class="label">Bullish setup score</div><div class="value" id="buyScore">—</div><div class="hint">Indicator agreement, not profit probability</div></div><div class="metric"><div class="label">Bearish setup score</div><div class="value" id="sellScore">—</div><div class="hint">Indicator agreement, not profit probability</div></div><div class="metric"><div class="label">Risk / caution</div><div class="value" id="caution">—</div><div class="hint">Check before trading</div></div></div><h2 style="margin-top:14px">Technical analysis explanation</h2><div id="reasons" class="status">Analyze a market to see indicator-by-indicator reasons.</div><div class="warning" style="margin-top:12px;margin-bottom:0">Setup scores measure indicator agreement only, not probability of profit. Confirm price action, fees, liquidity and risk before trading.</div></section><section class="panel wide" id="advancedPanel">
+<h2>Advanced indicator dashboard</h2>
+<div class="grid">
+<div class="metric"><div class="label">ATR (14) · volatility</div><div class="value" id="atr">—</div><div class="hint" id="atrHint">Average true range</div></div>
+<div class="metric"><div class="label">ADX (14) · trend strength</div><div class="value" id="adx">—</div><div class="hint" id="adxHint">Below 20 often means weak trend</div></div>
+<div class="metric"><div class="label">Bollinger position</div><div class="value" id="bbpos">—</div><div class="hint" id="bbHint">20-period, 2 standard deviations</div></div>
+<div class="metric"><div class="label">Volume vs average</div><div class="value" id="volratio">—</div><div class="hint">Latest candle / prior 20 average</div></div>
+</div>
+<h2 style="margin-top:14px">Trade planning levels (illustrative)</h2>
+<div class="grid">
+<div class="metric"><div class="label">Potential entry reference</div><div class="value" id="entryRef">—</div></div>
+<div class="metric"><div class="label">ATR stop reference</div><div class="value" id="stopRef">—</div></div>
+<div class="metric"><div class="label">1.5R target reference</div><div class="value" id="targetRef">—</div></div>
+<div class="metric"><div class="label">Reward / risk</div><div class="value" id="rrRef">—</div></div>
+</div>
+<div id="advancedNotes" class="status">Load market data to calculate advanced indicators.</div>
+</section>
+<section class="panel wide"><h2>Decision quality & limitations</h2>
+<div id="qualityNotes" class="status">Analysis quality will appear after candles load.</div>
+<div class="warning">No machine-learning model or external fundamentals feed is running in this static version. Headlines and technical indicators can be incomplete or delayed. Do not treat scores as win probabilities or use them as an instruction to trade.</div>
+</section>
 <section class="panel wide"><h2>Price history · EMA 20 / EMA 50</h2><canvas id="chart" width="900" height="300" aria-label="Price history chart"></canvas><div class="status">Illustrative chart of retrieved candles. Not a prediction.</div></section>
 <section class="panel"><h2>Signal checklist</h2><table><tbody id="checks"><tr><td colspan="2" class="muted">Analyze a market to calculate indicators.</td></tr></tbody></table><p class="status">Signals are indicator observations, not a probability of profit.</p></section>
 <section class="panel"><h2>Historical strategy test</h2><div class="status" style="margin:0 0 10px">Demo rule: EMA 20/50 crossover with RSI filter. Long-only, no leverage, fee deducted on entry and exit. This is a simplified research backtest.</div><div class="grid">
@@ -75,7 +96,7 @@ const pct=n=>(n>=0?"+":"")+fmt(n,2)+"%";
 function setStatus(s){$("status").textContent=s}
 async function getCandles(){
  const symbol=$("symbol").value, interval=$("interval").value, days=+$("days").value;
- const limit=Math.min(1000,Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440}[interval]))+10);
+ const requested=Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440}[interval]))+10; const limit=Math.min(1000,requested);
  const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
  const r=await fetch(url); if(!r.ok) throw new Error("Market API returned HTTP "+r.status);
  const raw=await r.json();
@@ -84,9 +105,42 @@ async function getCandles(){
 }
 function ema(values,period){let out=Array(values.length).fill(null),k=2/(period+1),prev=null;values.forEach((v,i)=>{prev=prev===null?v:v*k+prev*(1-k);out[i]=prev});return out}
 function rsi(values,period=14){let out=Array(values.length).fill(null),g=0,l=0;for(let i=1;i<=period;i++){let d=values[i]-values[i-1];if(d>0)g+=d;else l-=d}g/=period;l/=period;out[period]=l===0?100:100-100/(1+g/l);for(let i=period+1;i<values.length;i++){let d=values[i]-values[i-1];g=(g*(period-1)+Math.max(d,0))/period;l=(l*(period-1)+Math.max(-d,0))/period;out[i]=l===0?100:100-100/(1+g/l)}return out}
+function sma(values,period){
+ const out=Array(values.length).fill(null);
+ for(let i=period-1;i<values.length;i++){let s=0;for(let j=i-period+1;j<=i;j++)s+=values[j];out[i]=s/period;}
+ return out;
+}
+function atrCalc(cs,period=14){
+ const tr=cs.map((c,i)=>i===0?c.h-c.l:Math.max(c.h-c.l,Math.abs(c.h-cs[i-1].c),Math.abs(c.l-cs[i-1].c)));
+ const out=Array(cs.length).fill(null);
+ if(cs.length<period+1)return out;
+ let v=tr.slice(1,period+1).reduce((a,b)=>a+b,0)/period;out[period]=v;
+ for(let i=period+1;i<cs.length;i++){v=(v*(period-1)+tr[i])/period;out[i]=v;}
+ return out;
+}
+function adxCalc(cs,period=14){
+ const n=cs.length,tr=Array(n).fill(0),pdm=Array(n).fill(0),mdm=Array(n).fill(0),adx=Array(n).fill(null);
+ for(let i=1;i<n;i++){
+  tr[i]=Math.max(cs[i].h-cs[i].l,Math.abs(cs[i].h-cs[i-1].c),Math.abs(cs[i].l-cs[i-1].c));
+  const up=cs[i].h-cs[i-1].h,down=cs[i-1].l-cs[i].l;
+  pdm[i]=up>down&&up>0?up:0;mdm[i]=down>up&&down>0?down:0;
+ }
+ let st=tr.slice(1,period+1).reduce((a,b)=>a+b,0),sp=pdm.slice(1,period+1).reduce((a,b)=>a+b,0),sm=mdm.slice(1,period+1).reduce((a,b)=>a+b,0);
+ let dxs=[];
+ for(let i=period;i<n;i++){
+  if(i>period){st=st-st/period+tr[i];sp=sp-sp/period+pdm[i];sm=sm-sm/period+mdm[i];}
+  const p=st?100*sp/st:0,m=st?100*sm/st:0,dx=(p+m)?100*Math.abs(p-m)/(p+m):0;
+  if(i>=period*2-1){if(i===period*2-1){dxs=Array.from({length:period},(_,k)=>{const ix=period+k;return ix<n?0:0;});} }
+  adx[i]=dx;
+ }
+ // Smooth DX to ADX approximation using rolling DX values
+ for(let i=period*2-1;i<n;i++){const arr=adx.slice(i-period+1,i+1).filter(Number.isFinite);if(arr.length)adx[i]=arr.reduce((a,b)=>a+b,0)/arr.length;}
+ return adx;
+}
 function calc(){
  const close=candles.map(x=>x.c), e20=ema(close,20),e50=ema(close,50),e12=ema(close,12),e26=ema(close,26),macd=e12.map((v,i)=>v-e26[i]),sig=ema(macd,9),rs=rsi(close);
- return {close,e20,e50,macd,sig,rs};
+ const atr=atrCalc(candles),adx=adxCalc(candles),mid=sma(close,20),std=close.map((_,i)=>{if(i<19)return null;const a=close.slice(i-19,i+1),m=mid[i];return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/20)}),upper=mid.map((v,i)=>v===null?null:v+2*std[i]),lower=mid.map((v,i)=>v===null?null:v-2*std[i]);
+ return {close,e20,e50,macd,sig,rs,atr,adx,bbmid:mid,bbupper:upper,bblower:lower};
 }
 function drawChart(){
  const c=$("chart"),ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
@@ -117,6 +171,36 @@ function backtest(){
  $("pf").textContent=loss?fmt(profits/loss,2):(profits?"∞":"—");
  $("btNote").textContent=tradeReturns.length<5?"Small sample: results are not statistically reliable. This simplified backtest does not model spread, market impact, funding, or intrabar execution.":"Exploratory only: this simplified backtest does not model spread, market impact, funding, or intrabar execution. Results can differ from real trading.";
 }
+function updateDecision(){
+ const i=candles.length-1,p=candles[i].c,r=computed.rs[i],e20=computed.e20[i],e50=computed.e50[i],hist=computed.macd[i]-computed.sig[i];
+ const recent=candles.slice(-20,-1),support=Math.min(...recent.map(x=>x.l)),resistance=Math.max(...recent.map(x=>x.h));
+ const avg=recent.reduce((a,x)=>a+x.v,0)/Math.max(1,recent.length),vr=avg?candles[i].v/avg:1;
+ let bull=[],bear=[],caution=[];
+ if(e20>e50)bull.push("EMA20 is above EMA50: short-term trend is bullish.");else bear.push("EMA20 is below EMA50: short-term trend is bearish.");
+ if(r>=55&&r<70)bull.push("RSI "+fmt(r,1)+" shows positive momentum without an extreme reading.");else if(r>=70){bear.push("RSI "+fmt(r,1)+" is potentially overbought; chasing may be risky.");caution.push("High RSI");}else if(r<=30){bull.push("RSI "+fmt(r,1)+" is potentially oversold, but reversal is not confirmed.");caution.push("Oversold ≠ reversal");}else if(r<45)bear.push("RSI "+fmt(r,1)+" indicates weak momentum.");else bull.push("RSI "+fmt(r,1)+" is above 50, supporting positive momentum.");
+ if(hist>0)bull.push("MACD histogram is positive ("+fmt(hist,5)+"): momentum is above its signal line.");else bear.push("MACD histogram is negative ("+fmt(hist,5)+"): momentum is below its signal line.");
+ if(vr>1.2)bull.push("Latest candle volume is "+fmt(vr,2)+"× its recent average; activity is elevated, not necessarily bullish.");else caution.push("No volume surge");
+ if(p>resistance)bull.push("Price broke above the recent 19-candle high; watch for a false breakout.");else if(p<support)bear.push("Price fell below the recent 19-candle low; watch for a false breakdown.");else caution.push("Price remains inside recent range");
+ const n=bull.length+bear.length,bs=Math.round(100*bull.length/Math.max(1,n)),ss=Math.round(100*bear.length/Math.max(1,n));
+ let action="WAIT",cls="",summary="Signals are mixed or lack confirmation.";
+ if(bs>=75&&bull.length>=3){action="BUY SETUP";cls="up";summary="Bullish indicators agree; confirmation and risk planning are still needed.";}else if(ss>=75&&bear.length>=3){action="SELL / AVOID LONG";cls="down";summary="Bearish indicators agree. This is not an instruction to open a leveraged short.";}else if(bs>ss){action="WAIT · LEAN BULLISH";summary="Some bullish evidence, but not enough agreement for a strong setup.";}else if(ss>bs){action="WAIT · LEAN BEARISH";summary="Some bearish evidence, but not enough agreement for a strong setup.";}
+ $("decision").textContent=action;$("decision").className="value "+(cls==="up"?"green":cls==="down"?"red":"amber");$("decisionSummary").textContent=summary;$("decisionPill").textContent=action;$("decisionPill").className="pill "+cls;$("buyScore").textContent=bs+"%";$("sellScore").textContent=ss+"%";$("caution").textContent=caution[0]||"Review risk";$("caution").className="value amber";
+ const lines=[...bull.map(x=>"🟢 "+x),...bear.map(x=>"🔴 "+x),...caution.map(x=>"🟠 Caution: "+x)];
+ $("reasons").innerHTML=lines.map(x=>`<div style="padding:7px 0;border-bottom:1px solid #25344b">${esc(x)}</div>`).join("")+`<div style="padding-top:9px;color:#9eacc4">Simple recent range: support ≈ ${fmt(support,p<1?6:2)} USDT · resistance ≈ ${fmt(resistance,p<1?6:2)} USDT. These are not guaranteed levels.</div>`;
+ const atr=computed.atr[i],adx=computed.adx[i],bu=computed.bbupper[i],bl=computed.bblower[i],bm=computed.bbmid[i],bb=(bu&&bl)?(p-bl)/(bu-bl):null;
+ $("atr").textContent=Number.isFinite(atr)?fmt(atr,p<1?6:2)+" ("+fmt(atr/p*100,2)+"%)":"—";
+ $("atrHint").textContent=Number.isFinite(atr)?"ATR-based volatility estimate, not a forecast":"Insufficient candles";
+ $("adx").textContent=Number.isFinite(adx)?fmt(adx,1):"—";
+ $("adxHint").textContent=Number.isFinite(adx)?(adx>=25?"Trend strength elevated":adx<20?"Trend strength weak":"Trend strength moderate"):"Insufficient candles";
+ $("bbpos").textContent=Number.isFinite(bb)?(bb>1?"Above upper band":bb<0?"Below lower band":fmt(bb*100,0)+"% of band"): "—";
+ $("bbHint").textContent=Number.isFinite(bb)?(bb>1?"Potentially extended upward":bb<0?"Potentially extended downward":"Within Bollinger bands"):"Not enough history";
+ $("volratio").textContent=fmt(vr,2)+"×";
+ const longStop=p-2*(Number.isFinite(atr)?atr:0),longTarget=p+3*(Number.isFinite(atr)?atr:0);
+ $("entryRef").textContent=fmt(p,p<1?6:2)+" USDT";$("stopRef").textContent=Number.isFinite(atr)?fmt(longStop,p<1?6:2)+" USDT":"—";$("targetRef").textContent=Number.isFinite(atr)?fmt(longTarget,p<1?6:2)+" USDT":"—";$("rrRef").textContent=Number.isFinite(atr)&&atr>0?"1.5R (ATR × 2 stop, × 3 target)":"—";
+ $("advancedNotes").textContent=`ADX ${Number.isFinite(adx)?fmt(adx,1):"n/a"} describes trend strength, not direction. Bollinger position can stay extreme during strong trends; ATR estimates recent range and does not guarantee stop execution.`;
+ $("qualityNotes").textContent=`Data: ${candles.length} public spot candles for ${$("symbol").value} at ${$("interval").value}. Rules-based signal only; one timeframe, no order-book/derivatives data, no confirmed fundamental analysis. Latest candle may still be forming.`;
+}
+
 function render(){
  computed=calc();const i=candles.length-1,p=candles[i].c,prev=candles[0].c,change=(p/prev-1)*100,rr=computed.rs[i],m=computed.macd[i]-computed.sig[i],bull=computed.e20[i]>computed.e50[i];
  $("price").textContent=fmt(p, p<1?6:2);$("change").textContent=pct(change)+" over loaded history";$("change").className="hint "+(change>=0?"green":"red");
@@ -125,9 +209,9 @@ function render(){
  $("macd").textContent=fmt(m,5);$("macd").className="value "+(m>=0?"green":"red");$("macdHint").textContent=m>=0?"MACD above signal":"MACD below signal";
  $("ema").textContent=fmt(computed.e20[i],p<1?6:2)+" / "+fmt(computed.e50[i],p<1?6:2);$("emaHint").textContent=bull?"EMA20 above EMA50":"EMA20 below EMA50";
  $("trendPill").textContent=bull?"BULLISH EMA TREND":"BEARISH EMA TREND";$("trendPill").className="pill "+(bull?"up":"down");
- const rows=[["EMA trend",bull?"Bullish":"Bearish",bull],["RSI momentum",rr>50?"Positive":"Negative",rr>50],["MACD momentum",m>0?"Positive":"Negative",m>0],["Volume",candles[i].v>candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/19?"Above recent average":"At/below average",candles[i].v>candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/19]];
+ const rows=[["EMA trend",bull?"Bullish":"Bearish",bull],["RSI momentum",rr>50?"Positive":"Negative",rr>50],["MACD momentum",m>0?"Positive":"Negative",m>0],["Volume",candles[i].v>(candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/Math.max(1,candles.slice(-20,-1).length))?"Above recent average":"At/below average",candles[i].v>(candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/Math.max(1,candles.slice(-20,-1).length))]];
  $("checks").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="${r[2]?"green":"red"}">${r[1]}</td></tr>`).join("");
- drawChart();backtest();
+ updateDecision();drawChart();backtest();
  $("context").textContent=`${$("symbol").value}: ${candles.length} candles loaded. This page does not verify token fundamentals, exchange solvency, or macroeconomic conditions. Cross-check major announcements and liquidity before making decisions.`;
 }
 async function analyze(){const b=$("analyze");b.disabled=true;b.textContent="Loading…";setStatus("Fetching public market candles…");try{await getCandles();render();setStatus("Updated "+new Date().toLocaleTimeString()+" · "+candles.length+" candles · public spot market data.");}catch(e){setStatus("Could not load data: "+e.message+". Check internet access or try again later.");}finally{b.disabled=false;b.textContent="Analyze market";}}
