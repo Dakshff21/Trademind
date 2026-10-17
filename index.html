@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="description" content="Mobile-first crypto market analysis and historical strategy testing.">
+<link rel="manifest" href="manifest.json">
+<title>TradeMind AI — Crypto Lab</title>
+<style>
+:root{--bg:#080d18;--panel:#111a2b;--panel2:#162238;--line:#263650;--text:#edf3ff;--muted:#9eacc4;--green:#35d39a;--red:#ff6b7a;--blue:#80aaff;--amber:#f5c76b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#13213b 0%,var(--bg) 52%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:22px 16px 14px;max-width:1050px;margin:auto} .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px;letter-spacing:-.4px}.logo{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#74a6ff,#7c5cff);color:#07101f;font-weight:900}
+.sub{color:var(--muted);font-size:12px;margin-top:5px}main{max-width:1050px;margin:auto;padding:0 12px 32px}.warning{border:1px solid #69552b;background:#2a2418;color:#f7d99b;padding:11px 12px;border-radius:12px;font-size:12px;margin:8px 0 14px}
+.controls,.panel{background:linear-gradient(145deg,#121d30,#0e1727);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 8px 25px #0002}
+.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+select,button{width:100%;border:1px solid #344765;border-radius:10px;background:#0b1424;color:var(--text);padding:11px;font:inherit;min-height:42px}
+button{background:linear-gradient(135deg,#7ca7ff,#8a7cff);border:0;color:#08101e;font-weight:800;cursor:pointer}.btn-secondary{background:#1a2a43;color:var(--text);border:1px solid #344765}.status{color:var(--muted);font-size:12px;margin-top:9px}
+h2{font-size:15px;margin:0 0 12px;letter-spacing:.1px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#0b1424;border:1px solid #23334d;border-radius:12px;padding:12px;min-width:0}.metric .label{font-size:11px;color:var(--muted);margin-bottom:5px}.metric .value{font-size:20px;font-weight:800;letter-spacing:-.4px;overflow-wrap:anywhere}.metric .hint{font-size:11px;color:var(--muted);margin-top:4px}
+.green{color:var(--green)!important}.red{color:var(--red)!important}.amber{color:var(--amber)!important}.muted{color:var(--muted)}
+.signal{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;background:#20334c;color:#c6d8ff;white-space:nowrap}.pill.up{background:#123b31;color:#74efbd}.pill.down{background:#451f2b;color:#ff9ca7}
+canvas{display:block;width:100%;height:190px;background:#0a1322;border:1px solid #22324a;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:9px 5px;border-bottom:1px solid #25344b}th{color:var(--muted);font-weight:600}
+.news a{color:#a9c5ff;text-decoration:none}.news-item{padding:10px 0;border-bottom:1px solid #25344b}.news-item:last-child{border:0}.news-item small{display:block;color:var(--muted);margin-top:4px}
+.footer{text-align:center;color:#7585a0;font-size:11px;padding:10px 8px 20px}
+.row{display:flex;gap:8px}.row>*{flex:1}.hidden{display:none}
+@media(min-width:700px){header{padding-top:30px}.controls-grid{grid-template-columns:repeat(4,1fr)}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dashboard .panel{margin-bottom:0}.wide{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">TM</div><div>TradeMind <span style="color:#8caeff">AI</span><div class="sub">CRYPTO MARKET LAB · MOBILE EDITION</div></div></div></header>
+<main>
+<div class="warning"><b>Research tool, not financial advice.</b> Crypto is volatile. Backtests can overfit, fees/slippage matter, and past performance does not predict future results. No trade signal is a guarantee.</div>
+<section class="controls">
+<div class="controls-grid">
+<div class="field"><label for="symbol">Market</label><select id="symbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option><option>ADAUSDT</option><option>LINKUSDT</option><option>AVAXUSDT</option><option>TRXUSDT</option></select></div>
+<div class="field"><label for="interval">Candles</label><select id="interval"><option value="15m">15 minutes</option><option value="1h" selected>1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option></select></div>
+<div class="field"><label for="days">History</label><select id="days"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="180">180 days</option></select></div>
+<div class="field"><label for="fee">Fee per trade</label><select id="fee"><option value="0.1" selected>0.10%</option><option value="0.05">0.05%</option><option value="0.2">0.20%</option></select></div>
+</div>
+<div class="row" style="margin-top:12px"><button id="analyze">Analyze market</button><button id="refresh" class="btn-secondary">Refresh data</button></div>
+<div id="status" class="status">Ready. Choose a market and tap Analyze market.</div>
+</section>
+<div class="dashboard">
+<section class="panel wide"><div class="signal"><h2>Market snapshot</h2><span id="trendPill" class="pill">WAITING FOR DATA</span></div><div class="grid">
+<div class="metric"><div class="label">Last price (USDT)</div><div class="value" id="price">—</div><div class="hint" id="change">Waiting for candles</div></div>
+<div class="metric"><div class="label">RSI (14)</div><div class="value" id="rsi">—</div><div class="hint" id="rsiHint">Momentum</div></div>
+<div class="metric"><div class="label">MACD</div><div class="value" id="macd">—</div><div class="hint" id="macdHint">Trend momentum</div></div>
+<div class="metric"><div class="label">EMA 20 / EMA 50</div><div class="value" id="ema">—</div><div class="hint" id="emaHint">Trend filter</div></div>
+</div></section>
+<section class="panel wide"><h2>Price history · EMA 20 / EMA 50</h2><canvas id="chart" width="900" height="300" aria-label="Price history chart"></canvas><div class="status">Illustrative chart of retrieved candles. Not a prediction.</div></section>
+<section class="panel"><h2>Signal checklist</h2><table><tbody id="checks"><tr><td colspan="2" class="muted">Analyze a market to calculate indicators.</td></tr></tbody></table><p class="status">Signals are indicator observations, not a probability of profit.</p></section>
+<section class="panel"><h2>Historical strategy test</h2><div class="status" style="margin:0 0 10px">Demo rule: EMA 20/50 crossover with RSI filter. Long-only, no leverage, fee deducted on entry and exit. This is a simplified research backtest.</div><div class="grid">
+<div class="metric"><div class="label">Strategy return</div><div class="value" id="btReturn">—</div></div>
+<div class="metric"><div class="label">Buy & hold</div><div class="value" id="bhReturn">—</div></div>
+<div class="metric"><div class="label">Win rate</div><div class="value" id="winRate">—</div></div>
+<div class="metric"><div class="label">Max drawdown</div><div class="value" id="drawdown">—</div></div>
+<div class="metric"><div class="label">Closed trades</div><div class="value" id="trades">—</div></div>
+<div class="metric"><div class="label">Profit factor</div><div class="value" id="pf">—</div></div>
+</div><div id="btNote" class="status">Backtest results will appear here.</div></section>
+<section class="panel"><h2>Market context & news</h2><div id="context" class="status">Live market context is not loaded yet.</div><div id="news" class="news status">News feed not loaded yet. External headlines can be unavailable or delayed.</div><div class="row" style="margin-top:10px"><button class="btn-secondary" id="newsBtn">Load headlines</button><button class="btn-secondary" id="sourcesBtn">Open sources</button></div></section>
+<section class="panel"><h2>Risk calculator</h2><div class="controls-grid">
+<div class="field"><label for="capital">Account size (USDT)</label><select id="capital"><option value="100">100</option><option value="500" selected>500</option><option value="1000">1,000</option><option value="5000">5,000</option></select></div>
+<div class="field"><label for="risk">Risk per trade</label><select id="risk"><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="2">2%</option></select></div>
+<div class="field"><label for="stop">Stop distance</label><select id="stop"><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="2">2%</option><option value="3">3%</option></select></div>
+</div><div class="metric" style="margin-top:10px"><div class="label">Illustrative position size</div><div class="value" id="position">5,000 USDT</div><div class="hint" id="riskHint">Based on chosen risk and stop distance; excludes fees and slippage.</div></div></section>
+</div>
+<div class="footer">TradeMind AI · Educational analytics only · Data source: Binance public market data and public news API when available.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let candles=[], computed={};
+const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
+const pct=n=>(n>=0?"+":"")+fmt(n,2)+"%";
+function setStatus(s){$("status").textContent=s}
+async function getCandles(){
+ const symbol=$("symbol").value, interval=$("interval").value, days=+$("days").value;
+ const limit=Math.min(1000,Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440}[interval]))+10);
+ const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+ const r=await fetch(url); if(!r.ok) throw new Error("Market API returned HTTP "+r.status);
+ const raw=await r.json();
+ candles=raw.map(x=>({t:x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]}));
+ if(candles.length<60) throw new Error("Not enough candles for this analysis.");
+}
+function ema(values,period){let out=Array(values.length).fill(null),k=2/(period+1),prev=null;values.forEach((v,i)=>{prev=prev===null?v:v*k+prev*(1-k);out[i]=prev});return out}
+function rsi(values,period=14){let out=Array(values.length).fill(null),g=0,l=0;for(let i=1;i<=period;i++){let d=values[i]-values[i-1];if(d>0)g+=d;else l-=d}g/=period;l/=period;out[period]=l===0?100:100-100/(1+g/l);for(let i=period+1;i<values.length;i++){let d=values[i]-values[i-1];g=(g*(period-1)+Math.max(d,0))/period;l=(l*(period-1)+Math.max(-d,0))/period;out[i]=l===0?100:100-100/(1+g/l)}return out}
+function calc(){
+ const close=candles.map(x=>x.c), e20=ema(close,20),e50=ema(close,50),e12=ema(close,12),e26=ema(close,26),macd=e12.map((v,i)=>v-e26[i]),sig=ema(macd,9),rs=rsi(close);
+ return {close,e20,e50,macd,sig,rs};
+}
+function drawChart(){
+ const c=$("chart"),ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ const n=candles.length, step=Math.max(1,Math.ceil(n/180)), inds=[];for(let i=0;i<n;i+=step)inds.push(i);if(inds[inds.length-1]!==n-1)inds.push(n-1);
+ const vals=inds.flatMap(i=>[candles[i].c,computed.e20[i],computed.e50[i]]).filter(Number.isFinite),min=Math.min(...vals),max=Math.max(...vals),pad=18;
+ const x=i=>pad+(w-2*pad)*i/(inds.length-1||1),y=v=>h-pad-(v-min)/(max-min||1)*(h-2*pad);
+ ctx.strokeStyle="#22324a";ctx.lineWidth=1;for(let j=0;j<4;j++){let yy=pad+j*(h-2*pad)/3;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(w-pad,yy);ctx.stroke()}
+ function line(arr,color,width){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;inds.forEach((idx,j)=>{if(j===0)ctx.moveTo(x(j),y(arr[idx]));else ctx.lineTo(x(j),y(arr[idx]))});ctx.stroke()}
+ line(candles.map(z=>z.c),"#edf3ff",2);line(computed.e20,"#77a8ff",2);line(computed.e50,"#f5c76b",2);
+ ctx.font="13px system-ui";ctx.fillStyle="#edf3ff";ctx.fillText("Price",pad,13);ctx.fillStyle="#77a8ff";ctx.fillText("EMA20",pad+50,13);ctx.fillStyle="#f5c76b";ctx.fillText("EMA50",pad+115,13);
+}
+function backtest(){
+ const {close,e20,e50,rs}=computed, fee=+$("fee").value/100;
+ let inPos=false,entry=0,equity=1,peak=1,maxDD=0,wins=0,losses=0,tradeReturns=[],curve=[];
+ for(let i=1;i<close.length;i++){
+   const up=e20[i]>e50[i]&&e20[i-1]<=e50[i-1]&&rs[i]>=45&&rs[i]<=72;
+   const down=e20[i]<e50[i]&&e20[i-1]>=e50[i-1];
+   if(!inPos&&up){inPos=true;entry=close[i];equity*=1-fee}
+   else if(inPos&&down){let tr=close[i]/entry-1-2*fee;equity*=1+(close[i]/entry-1);equity*=1-fee;equity*=1-fee;tradeReturns.push(tr);if(tr>0)wins++;else losses++;inPos=false}
+   if(inPos&&i===close.length-1){let tr=close[i]/entry-1-2*fee;equity*=1+(close[i]/entry-1);equity*=1-fee;equity*=1-fee;tradeReturns.push(tr);if(tr>0)wins++;else losses++;inPos=false}
+   peak=Math.max(peak,equity);maxDD=Math.max(maxDD,(peak-equity)/peak);curve.push(equity);
+ }
+ const total=(equity-1)*100,bh=(close[close.length-1]/close[0]-1)*100,profits=tradeReturns.filter(x=>x>0).reduce((a,b)=>a+b,0),loss= Math.abs(tradeReturns.filter(x=>x<0).reduce((a,b)=>a+b,0));
+ $("btReturn").textContent=pct(total);$("btReturn").className="value "+(total>=0?"green":"red");
+ $("bhReturn").textContent=pct(bh);$("bhReturn").className="value "+(bh>=0?"green":"red");
+ $("winRate").textContent=tradeReturns.length?fmt(wins/tradeReturns.length*100,1)+"%":"—";
+ $("drawdown").textContent=fmt(maxDD*100,2)+"%";$("trades").textContent=String(tradeReturns.length);
+ $("pf").textContent=loss?fmt(profits/loss,2):(profits?"∞":"—");
+ $("btNote").textContent=tradeReturns.length<5?"Small sample: results are not statistically reliable. This simplified backtest does not model spread, market impact, funding, or intrabar execution.":"Exploratory only: this simplified backtest does not model spread, market impact, funding, or intrabar execution. Results can differ from real trading.";
+}
+function render(){
+ computed=calc();const i=candles.length-1,p=candles[i].c,prev=candles[0].c,change=(p/prev-1)*100,rr=computed.rs[i],m=computed.macd[i]-computed.sig[i],bull=computed.e20[i]>computed.e50[i];
+ $("price").textContent=fmt(p, p<1?6:2);$("change").textContent=pct(change)+" over loaded history";$("change").className="hint "+(change>=0?"green":"red");
+ $("rsi").textContent=fmt(rr,1);$("rsi").className="value "+(rr>70?"red":rr<30?"green":"");
+ $("rsiHint").textContent=rr>70?"Potentially overbought":rr<30?"Potentially oversold":"Neutral zone";
+ $("macd").textContent=fmt(m,5);$("macd").className="value "+(m>=0?"green":"red");$("macdHint").textContent=m>=0?"MACD above signal":"MACD below signal";
+ $("ema").textContent=fmt(computed.e20[i],p<1?6:2)+" / "+fmt(computed.e50[i],p<1?6:2);$("emaHint").textContent=bull?"EMA20 above EMA50":"EMA20 below EMA50";
+ $("trendPill").textContent=bull?"BULLISH EMA TREND":"BEARISH EMA TREND";$("trendPill").className="pill "+(bull?"up":"down");
+ const rows=[["EMA trend",bull?"Bullish":"Bearish",bull],["RSI momentum",rr>50?"Positive":"Negative",rr>50],["MACD momentum",m>0?"Positive":"Negative",m>0],["Volume",candles[i].v>candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/19?"Above recent average":"At/below average",candles[i].v>candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/19]];
+ $("checks").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="${r[2]?"green":"red"}">${r[1]}</td></tr>`).join("");
+ drawChart();backtest();
+ $("context").textContent=`${$("symbol").value}: ${candles.length} candles loaded. This page does not verify token fundamentals, exchange solvency, or macroeconomic conditions. Cross-check major announcements and liquidity before making decisions.`;
+}
+async function analyze(){const b=$("analyze");b.disabled=true;b.textContent="Loading…";setStatus("Fetching public market candles…");try{await getCandles();render();setStatus("Updated "+new Date().toLocaleTimeString()+" · "+candles.length+" candles · public spot market data.");}catch(e){setStatus("Could not load data: "+e.message+". Check internet access or try again later.");}finally{b.disabled=false;b.textContent="Analyze market";}}
+$("analyze").addEventListener("click",analyze);$("refresh").addEventListener("click",analyze);
+function riskCalc(){let cap=+$("capital").value,risk=+$("risk").value/100,stop=+$("stop").value/100;let amount=cap*risk/stop;$("position").textContent=fmt(amount,2)+" USDT";$("riskHint").textContent=fmt(cap*risk,2)+" USDT planned loss if stop executes at the selected distance; actual losses can be larger due to slippage/gaps."}
+["capital","risk","stop"].forEach(id=>$(id).addEventListener("change",riskCalc));riskCalc();
+$("newsBtn").addEventListener("click",async()=>{const box=$("news");box.textContent="Trying public crypto news feed…";try{const r=await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN");if(!r.ok)throw Error("HTTP "+r.status);const j=await r.json();const items=(j.Data||[]).slice(0,5);if(!items.length)throw Error("No headlines returned");box.innerHTML=items.map(a=>`<div class="news-item"><a href="${a.url}" target="_blank" rel="noopener">${esc(a.title)}</a><small>${esc(a.source||"News source")} · ${new Date(a.published_on*1000).toLocaleString()}</small></div>`).join("")}catch(e){box.textContent="Live headlines could not be retrieved in this browser/session. Open the source links below and verify news with primary sources before trading."}});
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+$("sourcesBtn").addEventListener("click",()=>{window.open("https://www.coindesk.com/","_blank","noopener");window.open("https://www.binance.com/en/markets","_blank","noopener")});
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body></html>
