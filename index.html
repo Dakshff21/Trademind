@@ -19,7 +19,7 @@ button{background:linear-gradient(135deg,#7ca7ff,#8a7cff);border:0;color:#08101e
 h2{font-size:15px;margin:0 0 12px;letter-spacing:.1px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#0b1424;border:1px solid #23334d;border-radius:12px;padding:12px;min-width:0}.metric .label{font-size:11px;color:var(--muted);margin-bottom:5px}.metric .value{font-size:20px;font-weight:800;letter-spacing:-.4px;overflow-wrap:anywhere}.metric .hint{font-size:11px;color:var(--muted);margin-top:4px}
 .green{color:var(--green)!important}.red{color:var(--red)!important}.amber{color:var(--amber)!important}.muted{color:var(--muted)}
 .signal{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;background:#20334c;color:#c6d8ff;white-space:nowrap}.pill.up{background:#123b31;color:#74efbd}.pill.down{background:#451f2b;color:#ff9ca7}
-canvas{display:block;width:100%;height:190px;background:#0a1322;border:1px solid #22324a;border-radius:12px}
+.tvframe{width:100%;height:480px;border:0;border-radius:12px;background:#0a1322}.input, input, select{max-width:100%}input[type=number],input[type=range]{width:100%;border:1px solid #344765;border-radius:10px;background:#0b1424;color:var(--text);padding:11px;font:inherit}input[type=range]{padding:0;accent-color:#80aaff}.strategy-row{padding:10px 0;border-bottom:1px solid #25344b}.strategy-row:last-child{border:0}.strategy-row b{display:block;margin-bottom:3px}.smallnote{font-size:11px;color:var(--muted)}canvas{display:block;width:100%;height:190px;background:#0a1322;border:1px solid #22324a;border-radius:12px}
 table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:9px 5px;border-bottom:1px solid #25344b}th{color:var(--muted);font-weight:600}
 .news a{color:#a9c5ff;text-decoration:none}.news-item{padding:10px 0;border-bottom:1px solid #25344b}.news-item:last-child{border:0}.news-item small{display:block;color:var(--muted);margin-top:4px}
 .footer{text-align:center;color:#7585a0;font-size:11px;padding:10px 8px 20px}
@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 <section class="controls">
 <div class="controls-grid">
 <div class="field"><label for="symbol">Market</label><select id="symbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option><option>ADAUSDT</option><option>LINKUSDT</option><option>AVAXUSDT</option><option>TRXUSDT</option></select></div>
-<div class="field"><label for="interval">Candles</label><select id="interval"><option value="15m">15 minutes</option><option value="1h" selected>1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option></select></div>
+<div class="field"><label for="interval">Candles</label><select id="interval"><option value="15m">15 minutes</option><option value="1h" selected>1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option><option value="1w">1 week</option></select></div>
 <div class="field"><label for="days">History</label><select id="days"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="180">180 days</option></select></div>
 <div class="field"><label for="fee">Fee per trade</label><select id="fee"><option value="0.1" selected>0.10%</option><option value="0.05">0.05%</option><option value="0.2">0.20%</option></select></div>
 </div>
@@ -69,6 +69,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 <div id="qualityNotes" class="status">Analysis quality will appear after candles load.</div>
 <div class="warning">No machine-learning model or external fundamentals feed is running in this static version. Headlines and technical indicators can be incomplete or delayed. Do not treat scores as win probabilities or use them as an instruction to trade.</div>
 </section>
+<section class="panel wide"><div class="signal"><h2>TradingView live chart</h2><span class="pill">Selected market</span></div><div id="tvWrap"><iframe id="tvChart" class="tvframe" title="TradingView chart" loading="lazy" referrerpolicy="origin" src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=BINANCE%3ABTCUSDT&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=%230b1424&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1& studies=RSI%40tv-basicstudies"></iframe></div><div class="status">TradingView chart is an embedded chart. Use its symbol search to inspect other exchanges/pairs. Symbol availability depends on TradingView; analysis data below comes from Binance spot candles.</div></section>
 <section class="panel wide"><h2>Price history · EMA 20 / EMA 50</h2><canvas id="chart" width="900" height="300" aria-label="Price history chart"></canvas><div class="status">Illustrative chart of retrieved candles. Not a prediction.</div></section>
 <section class="panel"><h2>Signal checklist</h2><table><tbody id="checks"><tr><td colspan="2" class="muted">Analyze a market to calculate indicators.</td></tr></tbody></table><p class="status">Signals are indicator observations, not a probability of profit.</p></section>
 <section class="panel"><h2>Historical strategy test</h2><div class="status" style="margin:0 0 10px">Demo rule: EMA 20/50 crossover with RSI filter. Long-only, no leverage, fee deducted on entry and exit. This is a simplified research backtest.</div><div class="grid">
@@ -79,14 +80,31 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 <div class="metric"><div class="label">Closed trades</div><div class="value" id="trades">—</div></div>
 <div class="metric"><div class="label">Profit factor</div><div class="value" id="pf">—</div></div>
 </div><div id="btNote" class="status">Backtest results will appear here.</div></section>
+<section class="panel wide"><h2>Famous trading frameworks · concept match</h2><div class="status">These are educational summaries inspired by publicly known trading approaches, not endorsements or exact proprietary systems. Matches are rule-based heuristics, not validated claims of profitability.</div><div id="strategyMatches"><div class="strategy-row">Analyze a market to see which concepts currently align.</div></div><h2 style="margin-top:14px">Strategy scorecard</h2><div id="strategyResults" class="status">Results appear after analysis. Scores measure rule alignment, not expected returns.</div></section>
 <section class="panel"><h2>Market context & news</h2><div id="context" class="status">Live market context is not loaded yet.</div><div id="news" class="news status">News feed not loaded yet. External headlines can be unavailable or delayed.</div><div class="row" style="margin-top:10px"><button class="btn-secondary" id="newsBtn">Load headlines</button><button class="btn-secondary" id="sourcesBtn">Open sources</button></div></section>
-<section class="panel"><h2>Risk calculator</h2><div class="controls-grid">
-<div class="field"><label for="capital">Account size (USDT)</label><select id="capital"><option value="100">100</option><option value="500" selected>500</option><option value="1000">1,000</option><option value="5000">5,000</option></select></div>
-<div class="field"><label for="risk">Risk per trade</label><select id="risk"><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="2">2%</option></select></div>
-<div class="field"><label for="stop">Stop distance</label><select id="stop"><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="2">2%</option><option value="3">3%</option></select></div>
-</div><div class="metric" style="margin-top:10px"><div class="label">Illustrative position size</div><div class="value" id="position">5,000 USDT</div><div class="hint" id="riskHint">Based on chosen risk and stop distance; excludes fees and slippage.</div></div></section>
+<section class="panel wide"><h2>Position & risk calculator</h2><div class="status">Account-size range: 0–1,000 USDT. Position sizing uses planned cash risk divided by stop distance. Spot-only arithmetic; leverage is not recommended or assumed.</div><div class="controls-grid">
+<div class="field"><label for="capital">Account size (USDT): <span id="capitalLabel">500</span></label><input id="capital" type="range" min="0" max="1000" step="10" value="500"></div>
+<div class="field"><label for="risk">Risk per trade (%)</label><select id="risk"><option value="0.25">0.25%</option><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="1.5">1.5%</option><option value="2">2%</option></select></div>
+<div class="field"><label for="side">Trade direction</label><select id="side"><option value="long" selected>Long / buy</option><option value="short">Short (planning only)</option></select></div>
+<div class="field"><label for="stopMode">Stop method</label><select id="stopMode"><option value="structure" selected>Structure + ATR</option><option value="atr">ATR × 1.5</option><option value="percent">Custom %</option></select></div>
+<div class="field"><label for="stop">Custom stop distance (%)</label><input id="stop" type="number" min="0.1" max="50" step="0.1" value="1.5"></div>
+<div class="field"><label for="rr">Take-profit target (R)</label><select id="rr"><option value="1">1R</option><option value="1.5">1.5R</option><option value="2" selected>2R</option><option value="3">3R</option></select></div>
+</div><div class="grid" style="margin-top:12px">
+<div class="metric"><div class="label">Planned max loss</div><div class="value" id="plannedLoss">5.00 USDT</div><div class="hint">Before fees, slippage and stop gaps</div></div>
+<div class="metric"><div class="label">Position notional</div><div class="value" id="position">333.33 USDT</div><div class="hint" id="riskHint">Sizing from stop distance</div></div>
+<div class="metric"><div class="label">Entry reference</div><div class="value" id="riskEntry">—</div><div class="hint">Latest fetched candle close</div></div>
+<div class="metric"><div class="label">Stop-loss reference</div><div class="value" id="riskStop">—</div><div class="hint">Structure/ATR-based when available</div></div>
+<div class="metric"><div class="label">Take-profit reference</div><div class="value" id="riskTarget">—</div><div class="hint" id="targetHint">Selected R multiple</div></div>
+<div class="metric"><div class="label">Position vs account</div><div class="value" id="exposure">—</div><div class="hint">Unleveraged spot affordability check</div></div>
+</div><div id="riskWarning" class="warning">Risk is not capped perfectly in fast markets. A stop order may fill worse than its trigger price.</div></section>
 </div>
-<div class="footer">TradeMind AI · Educational analytics only · Data source: Binance public market data and public news API when available.</div>
+<section class="panel wide"><h2>Final analysis result · decision summary</h2><div class="grid">
+<div class="metric"><div class="label">Overall result</div><div class="value" id="finalDecision">WAIT</div><div class="hint" id="finalSummary">Run analysis to produce a summary.</div></div>
+<div class="metric"><div class="label">Entry reference</div><div class="value" id="finalEntry">—</div><div class="hint">Latest candle close, not an order</div></div>
+<div class="metric"><div class="label">Stop-loss reference</div><div class="value" id="finalSL">—</div><div class="hint">Structure + ATR candidate</div></div>
+<div class="metric"><div class="label">Take-profit reference</div><div class="value" id="finalTP">—</div><div class="hint">Selected risk multiple</div></div>
+</div><div class="status" id="finalReasoning">The final result will summarize the setup, risk and concept matches after analysis.</div><div class="warning">If the stop is too wide, position size exceeds your account, or signals conflict, the disciplined result may be WAIT / NO TRADE. Never force a trade to match a strategy.</div></section>
+<div class="footer">TradeMind AI · Educational analytics only · Data source: Binance public market data and public news API when available.</div> · Educational analytics only · Data source: Binance public market data and public news API when available.</div>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -94,9 +112,25 @@ let candles=[], computed={};
 const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
 const pct=n=>(n>=0?"+":"")+fmt(n,2)+"%";
 function setStatus(s){$("status").textContent=s}
+async function loadAllMarkets(){
+ try{
+  const r=await fetch("https://api.binance.com/api/v3/exchangeInfo"); if(!r.ok) throw Error("exchange info unavailable");
+  const j=await r.json(); const sel=$("symbol"),current=sel.value;
+  const pairs=j.symbols.filter(x=>x.status==="TRADING"&&x.isSpotTradingAllowed&&x.quoteAsset==="USDT").map(x=>x.symbol).sort();
+  sel.innerHTML=pairs.map(x=>`<option value="${x}">${x}</option>`).join("");
+  if(pairs.includes(current))sel.value=current;
+  $("status").textContent=`Loaded ${pairs.length} active Binance USDT spot pairs. Select a market and analyze.`;
+ }catch(e){$("status").textContent="Using fallback market list; all-market directory could not load. Check connection."}
+}
+function updateTradingView(){
+ const sym=$("symbol").value, interval=$("interval").value;
+ const map={"15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"};
+ const url="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol="+encodeURIComponent("BINANCE:"+sym)+"&interval="+(map[interval]||"60")+"&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=%230b1424&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1";
+ $("tvChart").src=url;
+}
 async function getCandles(){
  const symbol=$("symbol").value, interval=$("interval").value, days=+$("days").value;
- const requested=Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440}[interval]))+10; const limit=Math.min(1000,requested);
+ const requested=Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440,"1w":10080}[interval]))+10; const limit=Math.min(1000,requested);
  const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
  const r=await fetch(url); if(!r.ok) throw new Error("Market API returned HTTP "+r.status);
  const raw=await r.json();
@@ -184,7 +218,9 @@ function updateDecision(){
  const n=bull.length+bear.length,bs=Math.round(100*bull.length/Math.max(1,n)),ss=Math.round(100*bear.length/Math.max(1,n));
  let action="WAIT",cls="",summary="Signals are mixed or lack confirmation.";
  if(bs>=75&&bull.length>=3){action="BUY SETUP";cls="up";summary="Bullish indicators agree; confirmation and risk planning are still needed.";}else if(ss>=75&&bear.length>=3){action="SELL / AVOID LONG";cls="down";summary="Bearish indicators agree. This is not an instruction to open a leveraged short.";}else if(bs>ss){action="WAIT · LEAN BULLISH";summary="Some bullish evidence, but not enough agreement for a strong setup.";}else if(ss>bs){action="WAIT · LEAN BEARISH";summary="Some bearish evidence, but not enough agreement for a strong setup.";}
- $("decision").textContent=action;$("decision").className="value "+(cls==="up"?"green":cls==="down"?"red":"amber");$("decisionSummary").textContent=summary;$("decisionPill").textContent=action;$("decisionPill").className="pill "+cls;$("buyScore").textContent=bs+"%";$("sellScore").textContent=ss+"%";$("caution").textContent=caution[0]||"Review risk";$("caution").className="value amber";
+ $("decision").textContent=action;$("decision").className="value "+(cls==="up"?"green":cls==="down"?"red":"amber");
+ $("finalDecision").textContent=action;$("finalDecision").className="value "+(cls==="up"?"green":cls==="down"?"red":"amber");
+ $("finalReasoning").textContent=`${bull.length} bullish observations, ${bear.length} bearish observations, ${caution.length} cautions. ${action==="BUY SETUP"?"Potential bullish alignment; wait for a valid trigger and verify risk/reward.":action==="SELL / AVOID LONG"?"Bearish alignment; avoid interpreting this as an automatic short instruction.":"Evidence is not decisive enough for a high-confidence setup. WAIT is a valid result."} Concept-match score is shown separately and is not a profit probability.`;$("decisionSummary").textContent=summary;$("decisionPill").textContent=action;$("decisionPill").className="pill "+cls;$("buyScore").textContent=bs+"%";$("sellScore").textContent=ss+"%";$("caution").textContent=caution[0]||"Review risk";$("caution").className="value amber";
  const lines=[...bull.map(x=>"🟢 "+x),...bear.map(x=>"🔴 "+x),...caution.map(x=>"🟠 Caution: "+x)];
  $("reasons").innerHTML=lines.map(x=>`<div style="padding:7px 0;border-bottom:1px solid #25344b">${esc(x)}</div>`).join("")+`<div style="padding-top:9px;color:#9eacc4">Simple recent range: support ≈ ${fmt(support,p<1?6:2)} USDT · resistance ≈ ${fmt(resistance,p<1?6:2)} USDT. These are not guaranteed levels.</div>`;
  const atr=computed.atr[i],adx=computed.adx[i],bu=computed.bbupper[i],bl=computed.bblower[i],bm=computed.bbmid[i],bb=(bu&&bl)?(p-bl)/(bu-bl):null;
@@ -195,10 +231,16 @@ function updateDecision(){
  $("bbpos").textContent=Number.isFinite(bb)?(bb>1?"Above upper band":bb<0?"Below lower band":fmt(bb*100,0)+"% of band"): "—";
  $("bbHint").textContent=Number.isFinite(bb)?(bb>1?"Potentially extended upward":bb<0?"Potentially extended downward":"Within Bollinger bands"):"Not enough history";
  $("volratio").textContent=fmt(vr,2)+"×";
- const longStop=p-2*(Number.isFinite(atr)?atr:0),longTarget=p+3*(Number.isFinite(atr)?atr:0);
- $("entryRef").textContent=fmt(p,p<1?6:2)+" USDT";$("stopRef").textContent=Number.isFinite(atr)?fmt(longStop,p<1?6:2)+" USDT":"—";$("targetRef").textContent=Number.isFinite(atr)?fmt(longTarget,p<1?6:2)+" USDT":"—";$("rrRef").textContent=Number.isFinite(atr)&&atr>0?"1.5R (ATR × 2 stop, × 3 target)":"—";
- $("advancedNotes").textContent=`ADX ${Number.isFinite(adx)?fmt(adx,1):"n/a"} describes trend strength, not direction. Bollinger position can stay extreme during strong trends; ATR estimates recent range and does not guarantee stop execution.`;
- $("qualityNotes").textContent=`Data: ${candles.length} public spot candles for ${$("symbol").value} at ${$("interval").value}. Rules-based signal only; one timeframe, no order-book/derivatives data, no confirmed fundamental analysis. Latest candle may still be forming.`;
+ const recentLows=candles.slice(-12,-1).map(x=>x.l),recentHighs=candles.slice(-12,-1).map(x=>x.h);
+ const swingLow=Math.min(...recentLows),swingHigh=Math.max(...recentHighs),a=Number.isFinite(atr)&&atr>0?atr:p*0.01;
+ const longStop=Math.min(swingLow,p-1.5*a),shortStop=Math.max(swingHigh,p+1.5*a);
+ const stopDistanceLong=Math.max(p-longStop,a*1.5),stopDistanceShort=Math.max(shortStop-p,a*1.5);
+ $("entryRef").textContent=fmt(p,p<1?6:2)+" USDT";$("stopRef").textContent=fmt(longStop,p<1?6:2)+" USDT";$("targetRef").textContent=fmt(p+2*stopDistanceLong,p<1?6:2)+" USDT";$("rrRef").textContent="2R · structure + 1.5 ATR buffer";
+ $("advancedNotes").textContent=`Long reference: stop below recent swing low with an ATR buffer; short reference: stop above recent swing high with an ATR buffer. If the stop is too far away, reduce size or skip. These are candidate levels, not guaranteed support/resistance.`;
+ $("qualityNotes").textContent=`Data: ${candles.length} public Binance spot candles for ${$("symbol").value} at ${$("interval").value}. Rules-based analysis; one timeframe, no order-book/derivatives data or verified fundamentals. Latest candle may still be forming.`;
+ updateRiskCalculator(p,atr,swingLow,swingHigh);
+ updateStrategies({bull:bull.length,bear:bear.length,rsi:r,adx,vr,p,support,resistance,e20,e50,hist});
+ updateTradingView();
 }
 
 function render(){
@@ -215,12 +257,35 @@ function render(){
  $("context").textContent=`${$("symbol").value}: ${candles.length} candles loaded. This page does not verify token fundamentals, exchange solvency, or macroeconomic conditions. Cross-check major announcements and liquidity before making decisions.`;
 }
 async function analyze(){const b=$("analyze");b.disabled=true;b.textContent="Loading…";setStatus("Fetching public market candles…");try{await getCandles();render();setStatus("Updated "+new Date().toLocaleTimeString()+" · "+candles.length+" candles · public spot market data.");}catch(e){setStatus("Could not load data: "+e.message+". Check internet access or try again later.");}finally{b.disabled=false;b.textContent="Analyze market";}}
-$("analyze").addEventListener("click",analyze);$("refresh").addEventListener("click",analyze);
-function riskCalc(){let cap=+$("capital").value,risk=+$("risk").value/100,stop=+$("stop").value/100;let amount=cap*risk/stop;$("position").textContent=fmt(amount,2)+" USDT";$("riskHint").textContent=fmt(cap*risk,2)+" USDT planned loss if stop executes at the selected distance; actual losses can be larger due to slippage/gaps."}
-["capital","risk","stop"].forEach(id=>$(id).addEventListener("change",riskCalc));riskCalc();
+$("analyze").addEventListener("click",analyze);$("refresh").addEventListener("click",analyze);$("symbol").addEventListener("change",updateTradingView);$("interval").addEventListener("change",updateTradingView);
+function updateRiskCalculator(price=null,atr=null,swingLow=null,swingHigh=null){
+ const cap=+$("capital").value,riskPct=+$("risk").value/100,side=$("side").value,mode=$("stopMode").value,custom=Math.max(.1,+$("stop").value||1.5)/100,rr=+$("rr").value;
+ const p=price??(candles.length?candles[candles.length-1].c:null),a=Number.isFinite(atr)&&atr>0?atr:(p?p*.01:null);
+ let stopDist=p? (mode==="percent"?p*custom:mode==="atr"?1.5*a:side==="long"?Math.max(p-(Number.isFinite(swingLow)?Math.min(swingLow,p-1.5*a):p-1.5*a),1.5*a):Math.max((Number.isFinite(swingHigh)?Math.max(swingHigh,p+1.5*a):p+1.5*a)-p,1.5*a)):null;
+ const cashRisk=cap*riskPct,notional=stopDist>0&&p?cashRisk/(stopDist/p):0,stopPrice=p&&stopDist?(side==="long"?p-stopDist:p+stopDist):null,targetPrice=p&&stopDist?(side==="long"?p+rr*stopDist:p-rr*stopDist):null;
+ $("capitalLabel").textContent=fmt(cap,0);$("plannedLoss").textContent=fmt(cashRisk,2)+" USDT";$("position").textContent=fmt(notional,2)+" USDT";$("riskEntry").textContent=p?fmt(p,p<1?6:2)+" USDT":"Load candles first";$("riskStop").textContent=stopPrice?fmt(stopPrice,p<1?6:2)+" USDT":"—";$("riskTarget").textContent=targetPrice?fmt(targetPrice,p<1?6:2)+" USDT":"—";$("targetHint").textContent=rr+"R target based on calculated stop distance";$("exposure").textContent=cap>0?fmt(notional/cap*100,1)+"% of account":"0%";
+ $("riskHint").textContent=stopDist?fmt(stopDist/p*100,2)+"% stop distance · excludes fees and slippage":"Enter an account size above zero.";
+ $("riskWarning").textContent=cap===0?"Account size is zero: no position should be taken.":notional>cap?`Position notional (${fmt(notional,2)} USDT) exceeds account size. For spot, cap the order at ${fmt(cap,2)} USDT or skip; doing so changes the planned loss.`:"Sizing is an estimate. Include entry/exit fees, slippage and liquidity; stop orders may fill worse than the trigger. Never risk money you cannot afford to lose.";
+}
+function riskCalc(){updateRiskCalculator()}
+["capital","risk","stop","side","stopMode","rr"].forEach(id=>$(id).addEventListener("input",riskCalc));
+function updateStrategies(x){
+ const rows=[
+  ["Trend following · Jesse Livermore / classic trend principles",x.e20>x.e50&&x.adx>=20,"EMA20 > EMA50 and ADX suggests a trend; avoid chasing far from structure."],
+  ["Breakout / Turtle-style rules",x.p>x.resistance||x.p<x.support,x.p>x.resistance?"Close is above recent range high; wait for breakout confirmation/volume.":x.p<x.support?"Close is below recent range low; downside breakout may be developing.":"No confirmed close outside the recent 19-candle range."],
+  ["Wyckoff market structure",x.p>x.support&&x.p<x.resistance&&x.vr>1.2,"Volume expansion inside a range needs context; accumulation/distribution cannot be identified reliably from volume alone."],
+  ["Dow Theory trend structure",x.e20>x.e50&&x.p>x.e20,"Trend filter is constructive; a single timeframe cannot confirm higher highs/higher lows."],
+  ["Mean reversion · RSI/Bollinger concept",x.rsi<30||x.rsi>70,"RSI is extreme; reversal is not confirmed. In strong trends, extremes can persist."],
+  ["Momentum confirmation · MACD/volume",x.hist>0&&x.vr>1,"MACD histogram and relative volume are supportive together; still verify candle close."]
+ ];
+ $("strategyMatches").innerHTML=rows.map(r=>`<div class="strategy-row"><b>${r[1]?"✓ Potential match":"○ Not confirmed"} · ${esc(r[0])}</b><span class="smallnote">${esc(r[2])}</span></div>`).join("");
+ const matched=rows.filter(r=>r[1]).length;
+ $("strategyResults").textContent=`${matched} of ${rows.length} concept checks currently align. This is a rule-match count, not a trade recommendation, win rate or profit forecast. No live strategy has been independently validated by this page.`;
+}
 $("newsBtn").addEventListener("click",async()=>{const box=$("news");box.textContent="Trying public crypto news feed…";try{const r=await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN");if(!r.ok)throw Error("HTTP "+r.status);const j=await r.json();const items=(j.Data||[]).slice(0,5);if(!items.length)throw Error("No headlines returned");box.innerHTML=items.map(a=>`<div class="news-item"><a href="${a.url}" target="_blank" rel="noopener">${esc(a.title)}</a><small>${esc(a.source||"News source")} · ${new Date(a.published_on*1000).toLocaleString()}</small></div>`).join("")}catch(e){box.textContent="Live headlines could not be retrieved in this browser/session. Open the source links below and verify news with primary sources before trading."}});
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 $("sourcesBtn").addEventListener("click",()=>{window.open("https://www.coindesk.com/","_blank","noopener");window.open("https://www.binance.com/en/markets","_blank","noopener")});
+loadAllMarkets();updateTradingView();riskCalc();
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>
 </body></html>
