@@ -17,3 +17,9 @@
 
 ## Important limitations
 This is a static educational research page, not a trained AI model, financial adviser, or execution platform. Binance's public API provides spot candle data; the symbol list is active Binance USDT spot pairs, not literally every token on every exchange. TradingView availability and chart data may differ from Binance. The rules do not have calibrated win probabilities. Stops can slip, and results do not include all fees, spread, funding, liquidation or market impact. No derivatives, order-book or comprehensive fundamentals engine is included. Verify everything independently and do not use leverage based only on these signals.
+
+
+## v5 update
+- Added 5-minute candle timeframe to Binance candle retrieval and TradingView chart interval.
+- Added a separate Smart Money Concepts chart with heuristic swing highs/lows, potential BOS, fair-value gaps, and a simple order-block candidate.
+- SMC markings are approximations from OHLC candles, not institutional order-flow data or a validated strategy.

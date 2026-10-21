@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 <section class="controls">
 <div class="controls-grid">
 <div class="field"><label for="symbol">Market</label><select id="symbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option><option>ADAUSDT</option><option>LINKUSDT</option><option>AVAXUSDT</option><option>TRXUSDT</option></select></div>
-<div class="field"><label for="interval">Candles</label><select id="interval"><option value="15m">15 minutes</option><option value="1h" selected>1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option><option value="1w">1 week</option></select></div>
+<div class="field"><label for="interval">Candles</label><select id="interval"><option value="5m">5 minutes</option><option value="15m">15 minutes</option><option value="1h" selected>1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option><option value="1w">1 week</option></select></div>
 <div class="field"><label for="days">History</label><select id="days"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="180">180 days</option></select></div>
 <div class="field"><label for="fee">Fee per trade</label><select id="fee"><option value="0.1" selected>0.10%</option><option value="0.05">0.05%</option><option value="0.2">0.20%</option></select></div>
 </div>
@@ -71,6 +71,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 </section>
 <section class="panel wide"><div class="signal"><h2>TradingView live chart</h2><span class="pill">Selected market</span></div><div id="tvWrap"><iframe id="tvChart" class="tvframe" title="TradingView chart" loading="lazy" referrerpolicy="origin" src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=BINANCE%3ABTCUSDT&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=%230b1424&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1& studies=RSI%40tv-basicstudies"></iframe></div><div class="status">TradingView chart is an embedded chart. Use its symbol search to inspect other exchanges/pairs. Symbol availability depends on TradingView; analysis data below comes from Binance spot candles.</div></section>
 <section class="panel wide"><h2>Price history · EMA 20 / EMA 50</h2><canvas id="chart" width="900" height="300" aria-label="Price history chart"></canvas><div class="status">Illustrative chart of retrieved candles. Not a prediction.</div></section>
+<section class="panel wide"><div class="signal"><h2>Smart Money Concepts (SMC) · separate structure chart</h2><span class="pill">Rule-detected levels</span></div><canvas id="smcChart" width="900" height="340" aria-label="Smart money concepts chart"></canvas><div id="smcNotes" class="status">Analyze market to map swing structure, potential BOS/CHoCH, fair-value gaps and order-block candidates.</div><div class="warning">SMC annotations are heuristic approximations from OHLC candles—not institutional order-flow data. BOS/CHoCH and zones can be subjective; validate them manually.</div></section>
 <section class="panel"><h2>Signal checklist</h2><table><tbody id="checks"><tr><td colspan="2" class="muted">Analyze a market to calculate indicators.</td></tr></tbody></table><p class="status">Signals are indicator observations, not a probability of profit.</p></section>
 <section class="panel"><h2>Historical strategy test</h2><div class="status" style="margin:0 0 10px">Demo rule: EMA 20/50 crossover with RSI filter. Long-only, no leverage, fee deducted on entry and exit. This is a simplified research backtest.</div><div class="grid">
 <div class="metric"><div class="label">Strategy return</div><div class="value" id="btReturn">—</div></div>
@@ -124,13 +125,13 @@ async function loadAllMarkets(){
 }
 function updateTradingView(){
  const sym=$("symbol").value, interval=$("interval").value;
- const map={"15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"};
+ const map={"5m":"5","15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"};
  const url="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol="+encodeURIComponent("BINANCE:"+sym)+"&interval="+(map[interval]||"60")+"&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=%230b1424&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1";
  $("tvChart").src=url;
 }
 async function getCandles(){
  const symbol=$("symbol").value, interval=$("interval").value, days=+$("days").value;
- const requested=Math.ceil(days*24*60/({"15m":15,"1h":60,"4h":240,"1d":1440,"1w":10080}[interval]))+10; const limit=Math.min(1000,requested);
+ const requested=Math.ceil(days*24*60/({"5m":5,"15m":15,"1h":60,"4h":240,"1d":1440,"1w":10080}[interval]))+10; const limit=Math.min(1000,requested);
  const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
  const r=await fetch(url); if(!r.ok) throw new Error("Market API returned HTTP "+r.status);
  const raw=await r.json();
@@ -186,6 +187,38 @@ function drawChart(){
  line(candles.map(z=>z.c),"#edf3ff",2);line(computed.e20,"#77a8ff",2);line(computed.e50,"#f5c76b",2);
  ctx.font="13px system-ui";ctx.fillStyle="#edf3ff";ctx.fillText("Price",pad,13);ctx.fillStyle="#77a8ff";ctx.fillText("EMA20",pad+50,13);ctx.fillStyle="#f5c76b";ctx.fillText("EMA50",pad+115,13);
 }
+function drawSMC(){
+ const c=$("smcChart"); if(!c||candles.length<10)return;
+ const ctx=c.getContext("2d"),w=c.width,h=c.height,pad=28;
+ ctx.clearRect(0,0,w,h);
+ const start=Math.max(0,candles.length-100), data=candles.slice(start), n=data.length;
+ const lo=Math.min(...data.map(z=>z.l)),hi=Math.max(...data.map(z=>z.h)),range=hi-lo||1;
+ const x=i=>pad+(w-2*pad)*i/(n-1||1), y=v=>h-pad-(v-lo)/range*(h-2*pad);
+ ctx.fillStyle="#0b1424";ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle="#22324a";ctx.lineWidth=1;for(let j=0;j<5;j++){const yy=pad+j*(h-2*pad)/4;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(w-pad,yy);ctx.stroke()}
+ // Simple candlesticks
+ const cw=Math.max(2,Math.min(7,(w-2*pad)/n*.58));
+ data.forEach((z,i)=>{const xx=x(i),up=z.c>=z.o;ctx.strokeStyle=up?"#35d49a":"#ff687d";ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(xx,y(z.h));ctx.lineTo(xx,y(z.l));ctx.stroke();const top=y(Math.max(z.o,z.c)),bot=y(Math.min(z.o,z.c));ctx.fillRect(xx-cw/2,top,cw,Math.max(1,bot-top));});
+ // Local 2-candle pivot swing levels
+ const highs=[],lows=[];
+ for(let i=2;i<n-2;i++){if(data[i].h>data[i-1].h&&data[i].h>data[i-2].h&&data[i].h>=data[i+1].h&&data[i].h>=data[i+2].h)highs.push({i,p:data[i].h});if(data[i].l<data[i-1].l&&data[i].l<data[i-2].l&&data[i].l<=data[i+1].l&&data[i].l<=data[i+2].l)lows.push({i,p:data[i].l});}
+ const lastH=highs[highs.length-1],lastL=lows[lows.length-1],last=data[n-1];let tags=[];
+ function level(obj,color,label){if(!obj)return;ctx.strokeStyle=color;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(x(obj.i),y(obj.p));ctx.lineTo(w-pad,y(obj.p));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=color;ctx.font="12px system-ui";ctx.fillText(label,Math.max(pad,x(obj.i)+3),Math.max(13,y(obj.p)-5));}
+ level(lastH,"#ffbd69","Swing high / liquidity");level(lastL,"#77a8ff","Swing low / liquidity");
+ if(lastH&&last.c>lastH.p){tags.push("Bullish BOS candidate: candle closed above latest confirmed swing high");ctx.fillStyle="#35d49a";ctx.font="bold 13px system-ui";ctx.fillText("BOS ↑",w-pad-58,Math.max(16,y(last.c)-12));}
+ else if(lastL&&last.c<lastL.p){tags.push("Bearish BOS candidate: candle closed below latest confirmed swing low");ctx.fillStyle="#ff687d";ctx.font="bold 13px system-ui";ctx.fillText("BOS ↓",w-pad-58,Math.min(h-8,y(last.c)+18));}
+ else tags.push("No close beyond the latest confirmed swing levels: BOS not confirmed by this simple rule");
+ if(highs.length>1&&lows.length>1){const prevH=highs[highs.length-2],prevL=lows[lows.length-2];if(lastH.p>prevH.p&&lastL.p>prevL.p)tags.push("Swing sequence leans bullish (higher high + higher low)");else if(lastH.p<prevH.p&&lastL.p<prevL.p)tags.push("Swing sequence leans bearish (lower high + lower low)");else tags.push("Mixed swing sequence: possible range or transition; CHoCH needs contextual confirmation");}
+ // Recent three-candle fair value gap candidates
+ let fvg=0;for(let i=Math.max(2,n-35);i<n;i++){if(data[i].l>data[i-2].h){const top=data[i].l,bottom=data[i-2].h;ctx.fillStyle="rgba(53,212,154,.16)";ctx.fillRect(x(i-2),y(top),Math.max(2,x(i)-x(i-2)),Math.max(2,y(bottom)-y(top)));ctx.strokeStyle="#35d49a";ctx.strokeRect(x(i-2),y(top),Math.max(2,x(i)-x(i-2)),Math.max(2,y(bottom)-y(top)));fvg++;}if(data[i].h<data[i-2].l){const top=data[i-2].l,bottom=data[i].h;ctx.fillStyle="rgba(255,104,125,.16)";ctx.fillRect(x(i-2),y(top),Math.max(2,x(i)-x(i-2)),Math.max(2,y(bottom)-y(top)));ctx.strokeStyle="#ff687d";ctx.strokeRect(x(i-2),y(top),Math.max(2,x(i)-x(i-2)),Math.max(2,y(bottom)-y(top)));fvg++;}}
+ // Candidate order block: last opposite candle before a confirmed close break, if found
+ let ob="No clear order-block candidate detected by the basic breakout rule.";
+ if(lastH&&last.c>lastH.p){for(let i=n-2;i>=Math.max(0,lastH.i-12);i--){if(data[i].c<data[i].o){ctx.fillStyle="rgba(119,168,255,.18)";ctx.fillRect(x(i),y(data[i].h),w-pad-x(i),Math.max(2,y(data[i].l)-y(data[i].h)));ctx.strokeStyle="#77a8ff";ctx.strokeRect(x(i),y(data[i].h),w-pad-x(i),Math.max(2,y(data[i].l)-y(data[i].h)));ob="Bullish order-block candidate: last bearish candle before the latest upside break.";break;}}}
+ if(lastL&&last.c<lastL.p){for(let i=n-2;i>=Math.max(0,lastL.i-12);i--){if(data[i].c>data[i].o){ctx.fillStyle="rgba(255,189,105,.18)";ctx.fillRect(x(i),y(data[i].h),w-pad-x(i),Math.max(2,y(data[i].l)-y(data[i].h)));ctx.strokeStyle="#ffbd69";ctx.strokeRect(x(i),y(data[i].h),w-pad-x(i),Math.max(2,y(data[i].l)-y(data[i].h)));ob="Bearish order-block candidate: last bullish candle before the latest downside break.";break;}}}
+ ctx.fillStyle="#edf3ff";ctx.font="12px system-ui";ctx.fillText("Recent candles · green = bullish · red = bearish · shaded zones = FVG / order-block candidates",pad,16);
+ $("smcNotes").textContent=`${$("symbol").value} · ${$("interval").value} · plotted ${n} recent candles. ${tags.join(" · ")} · ${fvg} potential FVG zone(s) found in visible window. ${ob}`;
+}
+
 function backtest(){
  const {close,e20,e50,rs}=computed, fee=+$("fee").value/100;
  let inPos=false,entry=0,equity=1,peak=1,maxDD=0,wins=0,losses=0,tradeReturns=[],curve=[];
@@ -253,7 +286,7 @@ function render(){
  $("trendPill").textContent=bull?"BULLISH EMA TREND":"BEARISH EMA TREND";$("trendPill").className="pill "+(bull?"up":"down");
  const rows=[["EMA trend",bull?"Bullish":"Bearish",bull],["RSI momentum",rr>50?"Positive":"Negative",rr>50],["MACD momentum",m>0?"Positive":"Negative",m>0],["Volume",candles[i].v>(candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/Math.max(1,candles.slice(-20,-1).length))?"Above recent average":"At/below average",candles[i].v>(candles.slice(-20,-1).reduce((a,x)=>a+x.v,0)/Math.max(1,candles.slice(-20,-1).length))]];
  $("checks").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="${r[2]?"green":"red"}">${r[1]}</td></tr>`).join("");
- updateDecision();drawChart();backtest();
+ updateDecision();drawChart();drawSMC();backtest();
  $("context").textContent=`${$("symbol").value}: ${candles.length} candles loaded. This page does not verify token fundamentals, exchange solvency, or macroeconomic conditions. Cross-check major announcements and liquidity before making decisions.`;
 }
 async function analyze(){const b=$("analyze");b.disabled=true;b.textContent="Loading…";setStatus("Fetching public market candles…");try{await getCandles();render();setStatus("Updated "+new Date().toLocaleTimeString()+" · "+candles.length+" candles · public spot market data.");}catch(e){setStatus("Could not load data: "+e.message+". Check internet access or try again later.");}finally{b.disabled=false;b.textContent="Analyze market";}}
